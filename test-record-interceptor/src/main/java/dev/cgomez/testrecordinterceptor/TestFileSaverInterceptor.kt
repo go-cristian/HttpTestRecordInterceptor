@@ -28,24 +28,7 @@ class TestFileSaverInterceptor(private val path: String) : Interceptor {
       request.toFileRequest()
     )
     val content = adapter.indent("  ").toJson(recordedFile)
-
-    try {
-      val file = File(path, name)
-      file.parentFile?.mkdirs()
-      file.createNewFile()
-
-      file.bufferedWriter().use {
-        it.write(content)
-      }
-
-      val responseFromFile = file.toResponse()
-      if (responseFromFile != null) {
-        return responseFromFile
-      }
-      throw Exception("no valid response")
-    } catch (e: Exception) {
-      throw e
-    }
+    return content.saveFile(path, name)
   }
 
   private fun File.toResponse(): Response? {
@@ -61,7 +44,7 @@ class TestFileSaverInterceptor(private val path: String) : Interceptor {
       copy.protocol.toString(),
       copy.message,
       copy.headers.map { Header(it.first, it.second) },
-      copy.body?.string(),
+      copy.body?.bytes(),
     )
   }
 
@@ -88,5 +71,25 @@ class TestFileSaverInterceptor(private val path: String) : Interceptor {
     val sha = HashUtils.sha256(body + headers)
     val path = url.encodedPathSegments.joinToString("-")
     return "$method-$path-$sha"
+  }
+
+  private fun String.saveFile(path: String, name: String): Response {
+    try {
+      val file = File(path, name)
+      file.parentFile?.mkdirs()
+      file.createNewFile()
+
+      file.bufferedWriter().use {
+        it.write(this)
+      }
+
+      val responseFromFile = file.toResponse()
+      if (responseFromFile != null) {
+        return responseFromFile
+      }
+      throw Exception("no valid response")
+    } catch (e: Exception) {
+      throw e
+    }
   }
 }
