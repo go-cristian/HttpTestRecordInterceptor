@@ -12,7 +12,7 @@ import java.nio.charset.Charset
 
 class TestFileSaverInterceptor(private val path: String) : Interceptor {
   private val adapter =
-    Moshi.Builder().add(KotlinJsonAdapterFactory()).build().adapter(FileResponse::class.java)
+    Moshi.Builder().add(KotlinJsonAdapterFactory()).build().adapter(RecordedFile::class.java)
 
   override fun intercept(chain: Interceptor.Chain): Response {
     val name = chain.request().fileName()
@@ -22,7 +22,12 @@ class TestFileSaverInterceptor(private val path: String) : Interceptor {
       if (response != null) return response
     }
     val response = chain.proceed(chain.request())
-    val content = adapter.indent("  ").toJson(response.toFileResponse())
+    val request = chain.request()
+    val recordedFile = RecordedFile(
+      response.toFileResponse(),
+      request.toFileRequest()
+    )
+    val content = adapter.indent("  ").toJson(recordedFile)
 
     try {
       val file = File(path, name)
@@ -49,20 +54,24 @@ class TestFileSaverInterceptor(private val path: String) : Interceptor {
     return response?.toResponse()
   }
 
-  private fun Response.toFileResponse(): FileResponse {
+  private fun Response.toFileResponse(): RecordedResponse {
     val copy = this.newBuilder().build()
-    return FileResponse(
+    return RecordedResponse(
       copy.code,
       copy.protocol.toString(),
       copy.message,
       copy.headers.map { Header(it.first, it.second) },
       copy.body?.string(),
-      FiledRequest(
-        copy.request.url.toString(),
-        copy.request.headers.map { Header(it.first, it.second) },
-        copy.request.method,
-        copy.request.body.string(),
-      )
+    )
+  }
+
+  private fun Request.toFileRequest(): RecordedRequest {
+    val copy = this.newBuilder().build()
+    return RecordedRequest(
+      copy.url.toString(),
+      copy.headers.map { (name, value) -> Header(name, value) },
+      copy.method,
+      copy.body.string()
     )
   }
 
