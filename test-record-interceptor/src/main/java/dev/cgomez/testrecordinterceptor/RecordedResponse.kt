@@ -1,8 +1,9 @@
 package dev.cgomez.testrecordinterceptor
 
-data class FiledRequest(
-  val url: String,
+data class RecordedResponse(
+  val code: Int,
+  val protocol: String,
+  val message: String,
   val headers: List<Header>,
-  val method: String,
   val body: String?,
 )
