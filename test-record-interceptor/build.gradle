@@ -1,12 +1,28 @@
-plugins {
-  id "java-library"
-  id "org.jetbrains.kotlin.jvm"
-  id "kotlin"
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+  // Maven artifact publish
+  dependencies {
+    classpath 'com.vanniktech:gradle-maven-publish-plugin:0.15.1'
+  }
 }
 
+plugins {
+  id 'java-library'
+  id 'kotlin'
+}
+apply plugin: "com.vanniktech.maven.publish"
+
 java {
-  sourceCompatibility = JavaVersion.VERSION_1_8
-  targetCompatibility = JavaVersion.VERSION_1_8
+  sourceCompatibility = JavaVersion.VERSION_11
+  targetCompatibility = JavaVersion.VERSION_11
+}
+
+compileKotlin {
+  kotlinOptions {
+    jvmTarget = "11"
+  }
 }
 
 dependencies {
